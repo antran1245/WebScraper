@@ -16,11 +16,11 @@ class Company:
         return
 
 # Print the content from the HTML page to a csv file
-def printToCSV(posts, filename, header):
+def printToCSV(posts, filename, headers):
     try:
         with open(filename, 'w', encoding='utf-8', newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(header)
+            writer.writerow(headers)
             writer.writerows(posts)
     except BaseException as e:
         print('BaseException:', filename, e)
@@ -30,32 +30,37 @@ def printToCSV(posts, filename, header):
 # Copy the content of the Fin Tech link.
 # Create an array of class to represent each of the company.
 # Read the information and correctly parse them into the correct class instance variables.
-def finTech(filename, header):
+def finTech(filename, headers):
     # Static URL
     URL = 'https://thefinancialtechnologyreport.com/the-top-100-financial-technology-companies-of-2022/'
     # Get the content from URL
     page = requests.get(URL)
     # Parser the HTML content
     soup = BeautifulSoup(page.content, "html.parser")
-    results = soup.find(class_="td-post-content")
-    # print(results.prettify())
-    postings = results.find_all("p")
-    # print(postings[5].find("b") == None)
+    container = soup.find(class_="td-post-content")
+    # print(container.prettify())
+    results = container.find_all("p")
+    # print(results[5].find("b") == None)
     
+    # Save all to an array
     posts = []
+    
+    # Placeholder for the row entry
     name = ""
     category = ""
     info = ""
     rank = 1
-    for posting in postings[5:len(postings)-1]:
+    
+    # Start from 5 because the needed content start then
+    for result in results[5:len(results)-1]:
         
         # Check if strong tag is in the p tag to get the name of company
-        if posting.find("strong") != None:
-            title = posting.find("strong").text
+        if result.find("strong") != None:
+            title = result.find("strong").text
             name = title[title.index('.')+2:]
-            category = posting.text[posting.text.index('Category:')+10:]
-        elif posting.text.strip() != "":
-            info += posting.text+"\n\n"
+            category = result.text[result.text.index('Category:')+10:]
+        elif result.text.strip() != "":
+            info += result.text+"\n\n"
         else:
             entry = Company(rank)
             entry.name = name
@@ -65,9 +70,11 @@ def finTech(filename, header):
             rank += 1
             posts.append(entry)
     
-    # printToCSV(posts, filename, header)
+    printToCSV(posts, filename, headers)
 
-def cloud100(filename, header):
+# Get a copy of the Cloud 100 article.
+# Parse into CSV.
+def cloud100(filename, headers):
     # Static website
     URL = "https://www.forbes.com/lists/cloud100/?sh=49fc6e5e7d9c"
     # Get the content from URL
@@ -77,7 +84,10 @@ def cloud100(filename, header):
     results = soup.find_all(class_="table-row-group")
     # print(results[6].find_all("a")[0].find(class_="ceoName"))
     
+    # Save all to an array
     posts = []
+    
+    # Placeholder for the row in each set of table-row-group
     rank = 1
     company = ''
     category = ''
@@ -85,6 +95,9 @@ def cloud100(filename, header):
     employees = ''
     valuation = ''
     ceo = ''
+    
+    # Many groups of table-row-group.
+    # Each a tags content a company detail
     for result in results:
         for post in result.find_all("a"):
             company = post.find(class_="organizationName").text
@@ -103,14 +116,73 @@ def cloud100(filename, header):
             entry.ceo = ceo
             posts.append(entry)
     
-    # posts[0].printCompany()
-    printToCSV(posts, filename, header)
+    # printToCSV(posts, filename, headers)
+
+def startups(filename, headers):
+    # Static website
+    URL = "https://www.forbes.com/sites/amyfeldman/2022/08/16/next-billion-dollar-startups-2022/?sh=7fd6e1485308"
+    # Get the content from URL
+    page = requests.get(URL)
+    # Parser the HTML content
+    soup = BeautifulSoup(page.content, "html.parser")
+    container = soup.find(class_="article-body")
+    # Get all the immediate children of the article-body element
+    results = container.find_all(recursive=False)
+    
+    posts = []
+    rank = 1
+    company = ''
+    founders = ''
+    equity = ''
+    revenue = ''
+    investors = ''
+    short = ''
+    full = ''
+    
+    startParse = False
+    # print(container.find_all(recursive=False)[9].name)
+    for result in results[9:len(results)]:
+        if result.name == 'h3':
+            company = result.find('strong').text
+        if result.name == 'h4':
+            if result.find('br') != None:
+                break
+            elif founders == '':
+                founders = result.find('strong').text
+            elif equity == '':
+                equity = result.find('strong').text
+            elif revenue == '':
+                revenue = result.find('strong').text
+            elif investors == '':
+                investors = result.find('strong').text
+        if result.name == 'p':
+            full = result.text
+            entry = Company(rank)
+            entry.company = company
+            entry.short = short
+            entry.revenue = revenue
+            entry.equity = equity
+            entry.founders = founders
+            entry.investors = investors
+            entry.full = full
+            company = ''
+            founders = ''
+            equity = ''
+            revenue = ''
+            investors = ''
+            full = ''
+            rank += 1
+            posts.append(entry)
+            
+    printToCSV(posts, filename, headers)
 
 if __name__=='__main__':
     
     # The Top 100 Financial Technology Companies of 2022
     # finTech('finTech.csv', ['Rank', 'Company', 'Category', 'Full Description'])
     
-    # The Cloud
-    cloud100('cloud100.csv', ['Rank', 'Company', 'Category', 'HQ Location', '# Employees', 'Valuation', 'Founders'])
+    # Forbes The Cloud
+    # cloud100('cloud100.csv', ['Rank', 'Company', 'Category', 'HQ Location', '# Employees', 'Valuation', 'Founders'])
     
+    # Forbes Next Billion Dollar Startups
+    startups('startups.csv', ['Rank', 'Company', 'Short Description', 'Revenue', 'Total Equity', 'Founders', 'Key Investors', 'Full Description'])
