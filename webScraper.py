@@ -9,17 +9,18 @@ class Company:
         self.rank = rank
     
     def __iter__(self):
-        return iter([self.rank, self.name, self.category, self.info])
+        return iter([*list(self.__dict__.values())])
     
     def printCompany(self):
-        print(self.name + "\n" + self.category + "\n" + self.info)
+        print([*list(self.__dict__.values())])
         return
 
 # Print the content from the HTML page to a csv file
-def printToCSV(posts, filename):
+def printToCSV(posts, filename, header):
     try:
         with open(filename, 'w', encoding='utf-8', newline="") as f:
             writer = csv.writer(f)
+            writer.writerow(header)
             writer.writerows(posts)
     except BaseException as e:
         print('BaseException:', filename, e)
@@ -29,7 +30,7 @@ def printToCSV(posts, filename):
 # Copy the content of the Fin Tech link.
 # Create an array of class to represent each of the company.
 # Read the information and correctly parse them into the correct class instance variables.
-def finTech():
+def finTech(filename, header):
     # Static URL
     URL = 'https://thefinancialtechnologyreport.com/the-top-100-financial-technology-companies-of-2022/'
     # Get the content from URL
@@ -56,17 +57,17 @@ def finTech():
         elif posting.text.strip() != "":
             info += posting.text+"\n\n"
         else:
-            temp = Company(rank)
-            temp.name = name
-            temp.category =  category
-            temp.info = info
+            entry = Company(rank)
+            entry.name = name
+            entry.category =  category
+            entry.info = info
             info = ""
             rank += 1
-            posts.append(temp)
-            
-    return posts
+            posts.append(entry)
+    
+    # printToCSV(posts, filename, header)
 
-def cloud100():
+def cloud100(filename, header):
     # Static website
     URL = "https://www.forbes.com/lists/cloud100/?sh=49fc6e5e7d9c"
     # Get the content from URL
@@ -74,14 +75,42 @@ def cloud100():
     # Parser the HTML content
     soup = BeautifulSoup(page.content, "html.parser")
     results = soup.find_all(class_="table-row-group")
-    print(results[0])
+    # print(results[6].find_all("a")[0].find(class_="ceoName"))
+    
+    posts = []
+    rank = 1
+    company = ''
+    category = ''
+    hq = ''
+    employees = ''
+    valuation = ''
+    ceo = ''
+    for result in results:
+        for post in result.find_all("a"):
+            company = post.find(class_="organizationName").text
+            category = post.find(class_="industry").text
+            hq = post.find(class_="headquarters").text
+            employees = post.find(class_="employees").text
+            valuation = post.find(class_="marketValue").text
+            ceo = post.find(class_="ceoName").text
+            entry = Company(rank)
+            rank += 1
+            entry.company = company
+            entry.category = category
+            entry.hq = hq
+            entry.employees = employees
+            entry.valuation = valuation
+            entry.ceo = ceo
+            posts.append(entry)
+    
+    # posts[0].printCompany()
+    printToCSV(posts, filename, header)
 
 if __name__=='__main__':
     
     # The Top 100 Financial Technology Companies of 2022
-    # posts = finTech('finTech.csv')
+    # finTech('finTech.csv', ['Rank', 'Company', 'Category', 'Full Description'])
     
     # The Cloud
-    cloud100()
+    cloud100('cloud100.csv', ['Rank', 'Company', 'Category', 'HQ Location', '# Employees', 'Valuation', 'Founders'])
     
-    # printToCSV(posts)
