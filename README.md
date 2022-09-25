@@ -4,10 +4,13 @@ Scarpe/Gather information from websites automatically.
 
 ## Information
 
-### Progress 
+### Current Progress
 
-Able to manually create function to read and parse into csv file.
+[x] Able to manually create functions to read and parse into csv file.
 
+[ ] Automatic parse all information from passing arguments.
+
+[ ] Sort information into the correct columns.
 ### Run
 - Require being in a virtual environment
 `python webScraper.py`
