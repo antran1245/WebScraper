@@ -176,6 +176,56 @@ def startups(filename, headers):
             
     printToCSV(posts, filename, headers)
 
+def combinator(filename, headers):
+    # Static website
+    URL = "https://www.ycombinator.com/topcompanies"
+    breakthroughURL = "https://www.ycombinator.com/topcompanies/breakthrough"
+    # Get the content from URL
+    page = requests.get(URL)
+    breakthroughPage = requests.get(breakthroughURL)
+    # Parser the HTML content
+    soup = BeautifulSoup(page.content, "html.parser")
+    breakthroughSoup = BeautifulSoup(breakthroughPage.content, "html.parser")
+    
+    container = soup.find("tbody")
+    results = container.find_all('tr')
+    breakthroughCompanys = breakthroughSoup.find_all(class_="company-name")
+    
+    posts = []
+    rank = 1
+    company = ''
+    website = ''
+    short = ''
+    hq = ''
+    status = ''
+    batch = ''
+    breakthrough = ''
+    breakthroughIndex = 0
+    for result in results:
+        company = result.find(class_="name").find(class_="company-name").text
+        website = result.find(class_="name").find(class_="company-website", href=True)['href']
+        short = result.find(class_="company-overview").text
+        hq = result.find(class_="headquarters").text
+        status = result.find(class_="status").text
+        batch = result.find(class_="small-batch").text
+        if breakthroughCompanys[breakthroughIndex].text == company:
+            breakthrough = 'Y'
+            breakthroughIndex += 1
+        else:
+            breakthrough = 'N'
+        entry = Company(rank)
+        entry.company = company
+        entry.website = website
+        entry.short = short
+        entry.hq = hq
+        entry.status = status
+        entry.batch = batch
+        entry.breakthrough = breakthrough
+        rank += 1
+        posts.append(entry)
+        
+    printToCSV(posts, filename, headers)
+
 if __name__=='__main__':
     
     # The Top 100 Financial Technology Companies of 2022
@@ -185,4 +235,7 @@ if __name__=='__main__':
     # cloud100('cloud100.csv', ['Rank', 'Company', 'Category', 'HQ Location', '# Employees', 'Valuation', 'Founders'])
     
     # Forbes Next Billion Dollar Startups
-    startups('startups.csv', ['Rank', 'Company', 'Short Description', 'Revenue', 'Total Equity', 'Founders', 'Key Investors', 'Full Description'])
+    # startups('startups.csv', ['Rank', 'Company', 'Short Description', 'Revenue', 'Total Equity', 'Founders', 'Key Investors', 'Full Description'])
+    
+    # Y Combinator Top Private Companies - 2022
+    combinator('yCombinator.csv', ['Rank', 'Company', 'Website', 'Short Description', 'HQ Location', 'Status', 'Batch', 'Breakthrough'])
