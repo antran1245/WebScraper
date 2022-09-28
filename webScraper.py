@@ -118,6 +118,7 @@ def cloud100(filename, headers):
     
     # printToCSV(posts, filename, headers)
 
+# Parse when all info are siblings
 def startups(filename, headers):
     # Static website
     URL = "https://www.forbes.com/sites/amyfeldman/2022/08/16/next-billion-dollar-startups-2022/?sh=7fd6e1485308"
@@ -140,7 +141,6 @@ def startups(filename, headers):
     full = ''
     
     startParse = False
-    # print(container.find_all(recursive=False)[9].name)
     for result in results[9:len(results)]:
         if result.name == 'h3':
             company = result.find('strong').text
@@ -176,20 +176,29 @@ def startups(filename, headers):
             
     printToCSV(posts, filename, headers)
 
+# Read from multi-table and parse them correctly
 def combinator(filename, headers):
     # Static website
     URL = "https://www.ycombinator.com/topcompanies"
     breakthroughURL = "https://www.ycombinator.com/topcompanies/breakthrough"
+    publicURL = "https://www.ycombinator.com/topcompanies/public"
     # Get the content from URL
     page = requests.get(URL)
     breakthroughPage = requests.get(breakthroughURL)
+    publicPage = requests.get(publicURL)
     # Parser the HTML content
     soup = BeautifulSoup(page.content, "html.parser")
     breakthroughSoup = BeautifulSoup(breakthroughPage.content, "html.parser")
+    publicSoup = BeautifulSoup(publicPage.content, "html.parser")
     
     container = soup.find("tbody")
     results = container.find_all('tr')
     breakthroughCompanys = breakthroughSoup.find_all(class_="company-name")
+    breakthroughDict = {breakthroughCompanys[i].text: 'Y' for i in range(0, len(breakthroughCompanys))}
+    publicCompanys = publicSoup.find("tbody").find_all('tr')
+    
+    # spread the pulic list into the private companys list
+    results.extend(publicCompanys)
     
     posts = []
     rank = 1
@@ -208,7 +217,7 @@ def combinator(filename, headers):
         hq = result.find(class_="headquarters").text
         status = result.find(class_="status").text
         batch = result.find(class_="small-batch").text
-        if breakthroughCompanys[breakthroughIndex].text == company:
+        if company in breakthroughDict:
             breakthrough = 'Y'
             breakthroughIndex += 1
         else:
@@ -223,8 +232,10 @@ def combinator(filename, headers):
         entry.breakthrough = breakthrough
         rank += 1
         posts.append(entry)
-        
+    
     printToCSV(posts, filename, headers)
+
+
 
 if __name__=='__main__':
     
@@ -239,3 +250,6 @@ if __name__=='__main__':
     
     # Y Combinator Top Private Companies - 2022
     combinator('yCombinator.csv', ['Rank', 'Company', 'Website', 'Short Description', 'HQ Location', 'Status', 'Batch', 'Breakthrough'])
+    
+    # 27 Insider
+    # insider('insider.csv', ['Rank', 'Company', 'Short Description', 'Total  Equity Funding', 'Full Description'])
