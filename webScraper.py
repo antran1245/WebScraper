@@ -235,7 +235,40 @@ def combinator(filename, headers):
     
     printToCSV(posts, filename, headers)
 
-
+def insider(filename, headers):
+    # Static website
+    URL = "https://www.businessinsider.com/most-promising-consumer-tech-startups-of-2022-8"
+    # Get the content from URL
+    page = requests.get(URL)
+    # Parser the HTML content
+    soup = BeautifulSoup(page.content, "html.parser")
+    container = soup.find(class_="slide-wrapper")
+    results = container.find_all("div", recursive=False)
+    
+    posts = []
+    rank = 1
+    company = ""
+    short = ""
+    equity = ""
+    full = ""
+    for result in results:
+        pTags = result.find_all('p')
+        company = pTags[0].find('a').text
+        equity = pTags[3].find('strong').next_sibling
+        i = 0
+        while not equity[i].isalpha():
+            i += 1
+        equity = equity[0:i] + " M"
+        full = pTags[4].find('strong').next_sibling + "\n\n" + pTags[5].find('strong').next_sibling
+        entry = Company(rank)
+        entry.company = company
+        entry.short = short
+        entry.equity = equity
+        entry.full = full
+        rank += 1
+        posts.append(entry)
+    
+    printToCSV(posts, filename, headers)
 
 if __name__=='__main__':
     
@@ -249,7 +282,7 @@ if __name__=='__main__':
     # startups('startups.csv', ['Rank', 'Company', 'Short Description', 'Revenue', 'Total Equity', 'Founders', 'Key Investors', 'Full Description'])
     
     # Y Combinator Top Private Companies - 2022
-    combinator('yCombinator.csv', ['Rank', 'Company', 'Website', 'Short Description', 'HQ Location', 'Status', 'Batch', 'Breakthrough'])
+    # combinator('yCombinator.csv', ['Rank', 'Company', 'Website', 'Short Description', 'HQ Location', 'Status', 'Batch', 'Breakthrough'])
     
     # 27 Insider
-    # insider('insider.csv', ['Rank', 'Company', 'Short Description', 'Total  Equity Funding', 'Full Description'])
+    insider('insider.csv', ['Rank', 'Company', 'Short Description', 'Total  Equity Funding', 'Full Description'])
