@@ -66,6 +66,7 @@ def finTech(filename, headers):
             entry.name = name
             entry.category =  category
             entry.info = info
+            entry.position = "Y"
             info = ""
             rank += 1
             posts.append(entry)
@@ -114,9 +115,10 @@ def cloud100(filename, headers):
             entry.employees = employees
             entry.valuation = valuation
             entry.ceo = ceo
+            entry.position = "Y"
             posts.append(entry)
     
-    # printToCSV(posts, filename, headers)
+    printToCSV(posts, filename, headers)
 
 # Parse when all info are siblings
 def startups(filename, headers):
@@ -131,7 +133,6 @@ def startups(filename, headers):
     results = container.find_all(recursive=False)
     
     posts = []
-    rank = 1
     company = ''
     founders = ''
     equity = ''
@@ -157,7 +158,7 @@ def startups(filename, headers):
                 investors = result.find('strong').text
         if result.name == 'p':
             full = result.text
-            entry = Company(rank)
+            entry = Company('n/a')
             entry.company = company
             entry.short = short
             entry.revenue = revenue
@@ -165,13 +166,13 @@ def startups(filename, headers):
             entry.founders = founders
             entry.investors = investors
             entry.full = full
+            entry.position = "Y"
             company = ''
             founders = ''
             equity = ''
             revenue = ''
             investors = ''
             full = ''
-            rank += 1
             posts.append(entry)
             
     printToCSV(posts, filename, headers)
@@ -230,6 +231,7 @@ def combinator(filename, headers):
         entry.status = status
         entry.batch = batch
         entry.breakthrough = breakthrough
+        entry.position = "Y"
         rank += 1
         posts.append(entry)
     
@@ -246,7 +248,6 @@ def insider(filename, headers):
     results = container.find_all("div", recursive=False)
     
     posts = []
-    rank = 1
     company = ""
     short = ""
     equity = ""
@@ -260,29 +261,116 @@ def insider(filename, headers):
             i += 1
         equity = equity[0:i] + " M"
         full = pTags[4].find('strong').next_sibling + "\n\n" + pTags[5].find('strong').next_sibling
-        entry = Company(rank)
+        entry = Company('n/a')
         entry.company = company
         entry.short = short
         entry.equity = equity
         entry.full = full
-        rank += 1
+        entry.position = "Y"
         posts.append(entry)
     
     printToCSV(posts, filename, headers)
 
+def mergeCSV(filename, mainCompanysList, compareDict):
+    mergeList = []
+    with open(filename, 'r', encoding='utf-8') as f:
+        dict_reader = csv.DictReader(f)
+        mergeList = list(dict_reader)
+        
+    for company in mergeList:
+        if company['Company'] not in compareDict:
+            entry = {'Rank': company['Rank']}
+            entry['Company'] = company['Company'] if 'Company' in company else ''
+            entry['Website'] = company['Website'] if 'Website' in company else ''
+            entry['Category'] = company['Category'] if 'Category' in company else ''
+            entry['Short Description'] = company['Short Description'] if 'Short Description' in company else ''
+            entry['Year Founded'] = company['Year Founded'] if 'Year Founded' in company else ''
+            entry['HQ Location'] = company['HQ Location'] if 'HQ Location' in company else ''
+            entry['# Employees'] = company['# Employees'] if '# Employees' in company else ''
+            entry['Revenue'] = company['Revenue'] if 'Revenue' in company else ''
+            entry['Ticker'] = company['Ticker'] if 'Ticker' in company else ''
+            entry['Total Equity Funding'] = company['Total Equity Funding'] if 'Total Equity Funding' in company else ''
+            entry['Valuation ($B)'] = company['Valuation ($B)'] if 'Valuation ($B)' in company else ''
+            entry['Founders'] = company['Founders'] if 'Founders' in company else ''
+            entry['Key Investors'] = company['Key Investors'] if 'Key Investors' in company else ''
+            entry['The Information Top 50'] = 'N'
+            entry['Wealthfront 2021'] = 'N'
+            entry['LinkedIn Top Startups 2021'] = 'N'
+            entry['F-Prime'] = 'N'
+            entry['TC Unicorn'] = 'N'
+            entry['The Information 2022 Likely IPOs'] = 'N'
+            entry['Founder Collective'] = 'N'
+            entry["Founder's Fund"] = 'N'
+            entry['Sequoia'] = 'N'
+            entry['Benchmark Capital'] = 'N'
+            entry['General Catalyst'] = 'N'
+            entry['Sutter Hill Ventures'] = 'N'
+            entry['Felicis Ventures'] = 'N'
+            entry['Cota Capital'] = 'N'
+            entry['Costanoa Ventures'] = 'N'
+            entry['Elevation Partners'] = 'N'
+            entry['Garuda.vc'] = 'N'
+            
+            entry['FinTech Top 100'] = 'Y' if 'finTech.csv' == filename else 'N'
+            entry["Forbes Next Billion Dollar Startups"] = 'Y' if 'startups.csv' == filename else 'N'
+            entry['Forbes The Cloud 100'] = 'Y' if 'cloud100.csv' == filename else 'N'
+            entry['Insider 27 Most Promising'] = 'Y' if 'insider.csv' == filename else 'N'
+            entry['YCombinator Top Private Companies'] = 'Y' if 'yCombinator.csv' == filename else 'N'
+            
+            entry['Full Description'] = company['Full Description'] if 'Full Description' in company else ''
+            entry['LinkedIn Profile Link'] = company['LinkedIn Profile Link'] if 'LinkedIn Profile Link' in company else ''
+            entry['Crunchbase Profile Link'] = company['Crunchbase Profile Link'] if 'Crunchbase Profile Link' in company else ''
+            mainCompanysList.append(entry)
+            compareDict[company['Company']] = len(mainCompanysList)-1
+        else:
+            # print(company['Company'])
+            # print(mainCompanysList[compareDict[company['Company']]]['Company'])
+            mainCompanysList[compareDict[company['Company']]]['FinTech Top 100'] = 'Y' if 'finTech.csv' == filename else 'N'
+            mainCompanysList[compareDict[company['Company']]]["Forbes Next Billion Dollar Startups"] = 'Y' if 'startups.csv' == filename else 'N'
+            mainCompanysList[compareDict[company['Company']]]['Forbes The Cloud 100'] = 'Y' if 'cloud100.csv' == filename else 'N'
+            mainCompanysList[compareDict[company['Company']]]['Insider 27 Most Promising'] = 'Y' if 'insider.csv' == filename else 'N'
+            mainCompanysList[compareDict[company['Company']]]['YCombinator Top Private Companies'] = 'Y' if 'yCombinator.csv' == filename else 'N'
+
+
+def mainList(filename, headers):
+    mainCompanysList = []
+    compareDict = {}
+    with open("mainCompanyList.csv", 'r', encoding='utf-8') as f:
+        dict_reader = csv.DictReader(f)
+        mainCompanysList = list(dict_reader)
+
+    for idx, company in enumerate(mainCompanysList):
+        compareDict[company['Company']] = idx
+    
+    mergeCSV("finTech.csv", mainCompanysList, compareDict)
+    mergeCSV("cloud100.csv", mainCompanysList, compareDict)
+    mergeCSV("insider.csv", mainCompanysList, compareDict)
+    mergeCSV("startups.csv", mainCompanysList, compareDict)
+    mergeCSV("yCombinator.csv", mainCompanysList, compareDict)
+    posts = []
+    for company in mainCompanysList:
+        posts.append(list(company.values()))
+    printToCSV(posts, filename, headers)
+
+
 if __name__=='__main__':
     
-    # The Top 100 Financial Technology Companies of 2022
-    # finTech('finTech.csv', ['Rank', 'Company', 'Category', 'Full Description'])
+    # # The Top 100 Financial Technology Companies of 2022
+    # finTech('finTech.csv', ['Rank', 'Company', 'Category', 'Full Description', 'FinTech Top 100'])
     
-    # Forbes The Cloud
-    # cloud100('cloud100.csv', ['Rank', 'Company', 'Category', 'HQ Location', '# Employees', 'Valuation', 'Founders'])
+    # # Forbes The Cloud
+    # cloud100('cloud100.csv', ['Rank', 'Company', 'Category', 'HQ Location', '# Employees', 'Valuation', 'Founders', 'Forbes The Cloud 100'])
     
-    # Forbes Next Billion Dollar Startups
-    # startups('startups.csv', ['Rank', 'Company', 'Short Description', 'Revenue', 'Total Equity', 'Founders', 'Key Investors', 'Full Description'])
+    # # Forbes Next Billion Dollar Startups
+    # startups('startups.csv', ['Rank', 'Company', 'Short Description', 'Revenue', 'Total Equity', 'Founders', 'Key Investors', 'Full Description', 'Forbes Next Billion Dollar Startups'])
     
-    # Y Combinator Top Private Companies - 2022
-    # combinator('yCombinator.csv', ['Rank', 'Company', 'Website', 'Short Description', 'HQ Location', 'Status', 'Batch', 'Breakthrough'])
+    # # Y Combinator Top Private Companies - 2022
+    # combinator('yCombinator.csv', ['Rank', 'Company', 'Website', 'Short Description', 'HQ Location', 'Status', 'Batch', 'Breakthrough', 'YCombinator Top Private Companies'])
     
-    # 27 Insider
-    insider('insider.csv', ['Rank', 'Company', 'Short Description', 'Total  Equity Funding', 'Full Description'])
+    # # 27 Insider
+    # insider('insider.csv', ['Rank', 'Company', 'Short Description', 'Total  Equity Funding', 'Full Description', 'Insider 27 Most Promising'])
+    
+    mainList('mainList.csv',  ['#', 'Company', 'Website', 'Category', 'Short Description', 'Year Founded', 'HQ Location', '# Employees', 'Revenue', 'Ticker', 'Total Equity Funding', 'Valuation ($B)',
+    'Founders', 'Key Investors', 'The Information Top 50', 'Wealthfront 2021', 'LinkedIn Top Startups 2021', 'F-Prime', 'TC Unicorn', 'The Information 2022 Likely IPOs', 'Founder Collective', "Founder's Fund",
+    'Sequoia', 'Benchmark Capital', 'General Catalyst', 'Sutter Hill Ventures', 'Felicis Ventures', 'Cota Capital', 'Costanoa Ventures', 'Elevation Partners', 'Garuda.vc', 'FinTech Top 100',
+    "Forbes Next Billion Dollar Startups", 'Forbes The Cloud 100', 'Insider 27 Most Promising', 'YCombinator Top Private Companies', 'Full Description', 'LinkedIn Profile Link', 'Crunchbase Profile Link'])
